@@ -14,5 +14,15 @@ jobs:
         with:
           version: "latest"
       - run: uv sync --locked --no-editable --dev
-      - run: uv run --no-sync ruff check .
+      - run: uv run --no-sync ruff check --no-cache .
       - run: uv run --no-sync pytest
+      - run: uv run --no-sync agent-skill-quality lint tests/fixtures/corpus
+      - run: uv run --no-sync agent-skill-quality report tests/fixtures/corpus
+      - run: uv run --no-sync agent-skill-quality suggest-prune tests/fixtures/corpus
+      - run: >-
+          uv run --no-sync agent-skill-quality skill-eval
+          tests/fixtures/evaluation/skills tests/fixtures/evaluation/cases.yaml
+      - run: >-
+          uv run --no-sync agent-skill-quality skill-eval
+          --variants tests/fixtures/ablation/variants.yaml
+          --case-fixture tests/fixtures/ablation/cases.yaml --strict
