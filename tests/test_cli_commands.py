@@ -31,3 +31,26 @@ def test_report_command_emits_markdown_without_secret_values() -> None:
     assert result.returncode == 0
     assert result.stdout.startswith("# Agent Skill Quality Report")
     assert "synthetic-only-value" not in result.stdout
+
+
+def test_suggest_prune_is_a_read_only_dry_run() -> None:
+    before = {
+        path: path.read_text(encoding="utf-8")
+        for path in sorted(FIXTURE_ROOT.rglob("SKILL.md"))
+    }
+
+    result = subprocess.run(
+        [sys.executable, "-m", "agent_skill_quality_gate", "suggest-prune", str(FIXTURE_ROOT)],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    after = {
+        path: path.read_text(encoding="utf-8")
+        for path in sorted(FIXTURE_ROOT.rglob("SKILL.md"))
+    }
+    assert result.returncode == 0
+    assert before == after
+    assert "Read-only dry run" in result.stdout
+    assert "INSTRUCTION_STALE_OR_NOOP" in result.stdout

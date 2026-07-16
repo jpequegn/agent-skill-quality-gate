@@ -19,6 +19,7 @@ def build_parser() -> argparse.ArgumentParser:
     for command, help_text in (
         ("lint", "Print a compact deterministic analysis summary."),
         ("report", "Print a Markdown quality report."),
+        ("suggest-prune", "Print read-only, finding-linked prune suggestions."),
     ):
         command_parser = subparsers.add_parser(command, help=help_text)
         command_parser.add_argument(
@@ -36,7 +37,12 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     from .analyzer import analyze_tree
     from .models import SkillParseError
-    from .reporting import render_lint_summary, render_markdown_report
+    from .pruning import propose_pruning
+    from .reporting import (
+        render_lint_summary,
+        render_markdown_report,
+        render_prune_review_packet,
+    )
 
     try:
         run = analyze_tree(arguments.root)
@@ -48,4 +54,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(render_lint_summary(run))
     if arguments.command == "report":
         print(render_markdown_report(run), end="")
+    if arguments.command == "suggest-prune":
+        print(render_prune_review_packet(propose_pruning(run)), end="")
     return 0

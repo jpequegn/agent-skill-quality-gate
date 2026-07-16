@@ -60,6 +60,7 @@ class ParseResult:
 
 
 Severity = Literal["error", "warning"]
+PruneAction = Literal["delete", "consolidate", "move-to-reference"]
 
 
 @dataclass(frozen=True)
@@ -93,6 +94,19 @@ class SkillLintResult:
 class LintRun:
     results: tuple[SkillLintResult, ...]
     diagnostics: tuple[ParseDiagnostic, ...]
+
+
+@dataclass(frozen=True)
+class PruneProposal:
+    """A review-only change suggestion derived from a static lint finding."""
+
+    action: PruneAction
+    finding_rule_id: str
+    skill_name: str
+    source_path: Path
+    line: int | None
+    rationale: str
+    proposed_change: str
 
 
 class SkillParseError(ValueError):

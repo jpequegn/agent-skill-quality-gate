@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from collections import defaultdict
 
-from .models import LintRun, SkillLintResult
+from .models import LintRun, PruneProposal, SkillLintResult
 
 _SENSITIVE_VALUE_PATTERN = re.compile(
     r"(?i)\b(api[_-]?key|password|secret|token)\s*([:=])\s*[^\s,;]+"
@@ -108,3 +108,27 @@ def render_markdown_report(run: LintRun) -> str:
             )
         lines.append("")
     return "\n".join(lines).rstrip() + "\n"
+
+
+def render_prune_review_packet(proposals: tuple[PruneProposal, ...]) -> str:
+    """Render a dry-run packet; callers never receive a file-writing operation."""
+
+    lines = [
+        "# Skill Prune Review Packet",
+        "",
+        "Read-only dry run. No inspected skill files were changed.",
+        "",
+        "| Action | Skill | Source | Finding | Rationale | Proposed change |",
+        "| --- | --- | --- | --- | --- | --- |",
+    ]
+    for proposal in proposals:
+        location = _location(str(proposal.source_path), proposal.line)
+        lines.append(
+            "| "
+            f"{proposal.action} | {proposal.skill_name} | {location} | "
+            f"{proposal.finding_rule_id} | {_redact(proposal.rationale)} | "
+            f"{_redact(proposal.proposed_change)} |"
+        )
+    if not proposals:
+        lines.extend(["| none | - | - | - | No prune candidates were found. | - |"])
+    return "\n".join(lines) + "\n"
