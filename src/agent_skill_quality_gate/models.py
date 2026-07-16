@@ -89,5 +89,11 @@ class SkillLintResult:
     findings: tuple[LintFinding, ...]
 
 
+@dataclass(frozen=True)
+class LintRun:
+    results: tuple[SkillLintResult, ...]
+    diagnostics: tuple[ParseDiagnostic, ...]
+
+
 class SkillParseError(ValueError):
     """Raised when a SKILL.md cannot be safely interpreted as a skill card."""

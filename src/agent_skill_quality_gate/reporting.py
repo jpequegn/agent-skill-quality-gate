@@ -1,0 +1,110 @@
+"""Privacy-safe renderers for deterministic lint results."""
+
+from __future__ import annotations
+
+import re
+from collections import defaultdict
+
+from .models import LintRun, SkillLintResult
+
+_SENSITIVE_VALUE_PATTERN = re.compile(
+    r"(?i)\b(api[_-]?key|password|secret|token)\s*([:=])\s*[^\s,;]+"
+)
+
+
+def _redact(text: str) -> str:
+    return _SENSITIVE_VALUE_PATTERN.sub(r"\1\2[REDACTED]", text)
+
+
+def _location(path: str, line: int | None) -> str:
+    return f"{path}:{line}" if line is not None else path
+
+
+def render_lint_summary(run: LintRun) -> str:
+    """Render a compact CLI summary without exposing instruction bodies."""
+
+    lines = [f"Inspected {len(run.results)} skill(s)"]
+    for result in run.results:
+        error_count = sum(finding.severity == "error" for finding in result.findings)
+        warning_count = sum(finding.severity == "warning" for finding in result.findings)
+        lines.append(
+            f"{result.skill_name}: score {result.score} | errors {error_count} "
+            f"| warnings {warning_count}"
+        )
+    if run.diagnostics:
+        lines.append(f"Completeness diagnostics: {len(run.diagnostics)}")
+    return "\n".join(lines)
+
+
+def _dashboard_rows(run: LintRun) -> list[str]:
+    scores_by_category: dict[str, list[int]] = defaultdict(list)
+    for result in run.results:
+        for category in result.category_scores:
+            scores_by_category[category.category].append(category.score)
+
+    rows = ["| Category | Average score |", "| --- | ---: |"]
+    for category in sorted(scores_by_category):
+        scores = scores_by_category[category]
+        rows.append(f"| {category} | {sum(scores) // len(scores)} |")
+    return rows
+
+
+def _skill_row(result: SkillLintResult) -> str:
+    errors = sum(finding.severity == "error" for finding in result.findings)
+    warnings = sum(finding.severity == "warning" for finding in result.findings)
+    return f"| {result.skill_name} | {result.score} | {errors} | {warnings} |"
+
+
+def render_markdown_report(run: LintRun) -> str:
+    """Render an auditable report with redacted finding evidence."""
+
+    average_score = sum(result.score for result in run.results) // max(1, len(run.results))
+    lines = [
+        "# Agent Skill Quality Report",
+        "",
+        "## Summary",
+        "",
+        f"- Skills inspected: {len(run.results)}",
+        f"- Average score: {average_score}",
+        f"- Completeness diagnostics: {len(run.diagnostics)}",
+        "",
+        "## Category Dashboard",
+        "",
+        *_dashboard_rows(run),
+        "",
+        "## Skill Scores",
+        "",
+        "| Skill | Score | Errors | Warnings |",
+        "| --- | ---: | ---: | ---: |",
+        *(_skill_row(result) for result in run.results),
+    ]
+
+    if run.diagnostics:
+        lines.extend(["", "## Completeness Diagnostics", ""])
+        for diagnostic in run.diagnostics:
+            lines.append(
+                f"- {diagnostic.code} at {diagnostic.source_path}: {_redact(diagnostic.message)}"
+            )
+
+    lines.extend(["", "## Findings", ""])
+    for result in run.results:
+        lines.extend([f"### {result.skill_name}", ""])
+        if not result.findings:
+            lines.extend(["No static findings.", ""])
+            continue
+        lines.extend(
+            [
+                "| Severity | Rule | Location | Evidence | Review-safe remediation |",
+                "| --- | --- | --- | --- | --- |",
+            ]
+        )
+        for finding in result.findings:
+            location = _location(str(finding.source_path), finding.line)
+            lines.append(
+                "| "
+                f"{finding.severity} | {finding.rule_id} | {location} | "
+                f"{_redact(finding.evidence)} "
+                f"| {finding.remediation} |"
+            )
+        lines.append("")
+    return "\n".join(lines).rstrip() + "\n"
