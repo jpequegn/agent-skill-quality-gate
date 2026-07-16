@@ -19,7 +19,11 @@ uv run --no-sync pytest
 ```
 
 The non-editable sync avoids macOS treating editable-install path files inside a dot-prefixed virtual
-environment as hidden. Run the sync command again after changing package source files.
+environment as hidden. After changing package source files, run:
+
+```sh
+uv sync --locked --no-editable --dev --reinstall-package agent-skill-quality-gate
+```
 
 ## Privacy Boundary
 
