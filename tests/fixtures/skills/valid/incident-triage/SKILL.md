@@ -20,6 +20,7 @@ skill_card:
 
 # Incident Triage
 
-Confirm the incident summary, gather the approved timeline, and record the handoff decision.
+Confirm the incident summary, gather the approved timeline, and record the handoff decision. Verify
+the cited timeline before completing the handoff.
 
 Use the [decision checklist](references/decision-checklist.md) before completing the handoff.

@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
+from typing import Literal
 
 
 @dataclass(frozen=True)
@@ -56,6 +57,36 @@ class SkillCard:
 class ParseResult:
     cards: tuple[SkillCard, ...]
     diagnostics: tuple[ParseDiagnostic, ...]
+
+
+Severity = Literal["error", "warning"]
+
+
+@dataclass(frozen=True)
+class LintFinding:
+    rule_id: str
+    category: str
+    severity: Severity
+    message: str
+    evidence: str
+    remediation: str
+    source_path: Path
+    line: int | None
+
+
+@dataclass(frozen=True)
+class CategoryScore:
+    category: str
+    score: int
+
+
+@dataclass(frozen=True)
+class SkillLintResult:
+    skill_name: str
+    source_path: Path
+    score: int
+    category_scores: tuple[CategoryScore, ...]
+    findings: tuple[LintFinding, ...]
 
 
 class SkillParseError(ValueError):
