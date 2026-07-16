@@ -1,0 +1,10 @@
+variants:
+  - name: baseline
+    role: baseline
+    root: skills/baseline
+  - name: bloated
+    role: bloated
+    root: skills/bloated
+  - name: distilled
+    role: distilled
+    root: skills/distilled

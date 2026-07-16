@@ -177,6 +177,46 @@ class SelectionEvaluation:
     contract_violations: tuple[ContractViolation, ...]
 
 
+VariantRole = Literal["baseline", "bloated", "distilled"]
+Recommendation = Literal["promote", "revise", "retire"]
+
+
+@dataclass(frozen=True)
+class VariantSpec:
+    """A local-only skill directory participating in a deterministic ablation."""
+
+    name: str
+    role: VariantRole
+    root: Path
+
+
+@dataclass(frozen=True)
+class VariantMetrics:
+    name: str
+    role: VariantRole
+    development_success: float
+    held_out_success: float
+    retries: int
+    context_cost: int
+    latency_proxy: int
+    negative_triggers: int
+    safety_violations: int
+    evidence_violations: int
+
+
+@dataclass(frozen=True)
+class PromotionDecision:
+    candidate: str
+    recommendation: Recommendation
+    reasons: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class AblationEvaluation:
+    variants: tuple[VariantMetrics, ...]
+    decision: PromotionDecision
+
+
 class SkillParseError(ValueError):
     """Raised when a SKILL.md cannot be safely interpreted as a skill card."""
 

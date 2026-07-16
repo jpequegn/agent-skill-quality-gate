@@ -1,0 +1,58 @@
+cases:
+  - id: dev-response-playbook
+    split: development
+    request: Prepare a production response playbook for this service.
+    skill: response-playbook
+    should_trigger: true
+    required_artifacts:
+      - Handoff record
+    requested_tools:
+      - incident-api
+    forbidden_instructions:
+      - store raw logs
+  - id: dev-response-handoff
+    split: development
+    request: Review the production response playbook before the incident handoff.
+    skill: response-playbook
+    should_trigger: true
+    required_artifacts:
+      - Handoff record
+    requested_tools:
+      - incident-api
+    forbidden_instructions:
+      - store raw logs
+  - id: dev-product-feature
+    split: development
+    request: Draft a product feature release plan.
+    skill: response-playbook
+    should_trigger: false
+    required_artifacts: []
+    requested_tools: []
+    forbidden_instructions: []
+  - id: held-out-incident-escalation
+    split: held-out
+    request: Triage an incident escalation before the handoff.
+    skill: response-playbook
+    should_trigger: true
+    required_artifacts:
+      - Handoff record
+    requested_tools:
+      - incident-api
+    forbidden_instructions:
+      - store raw logs
+  - id: held-out-production-billing
+    split: held-out
+    request: Handle a production billing question for a customer.
+    skill: response-playbook
+    should_trigger: false
+    required_artifacts: []
+    requested_tools: []
+    forbidden_instructions: []
+  - id: held-out-sandbox-alert
+    split: held-out
+    request: Coordinate a sandbox test alert.
+    skill: response-playbook
+    should_trigger: false
+    required_artifacts: []
+    requested_tools: []
+    forbidden_instructions: []

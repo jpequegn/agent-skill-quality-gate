@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from collections import defaultdict
 
-from .models import LintRun, PruneProposal, SelectionEvaluation, SkillLintResult
+from .models import AblationEvaluation, LintRun, PruneProposal, SelectionEvaluation, SkillLintResult
 
 _SENSITIVE_VALUE_PATTERN = re.compile(
     r"(?i)\b(api[_-]?key|password|secret|token)\s*([:=])\s*[^\s,;]+"
@@ -194,4 +194,45 @@ def render_selection_evaluation(evaluation: SelectionEvaluation) -> str:
                 f"{violation.case_id} | {violation.skill_name} | {violation.code} | "
                 f"{_redact(violation.message)} |"
             )
+    return "\n".join(lines) + "\n"
+
+
+def render_ablation_evaluation(evaluation: AblationEvaluation) -> str:
+    """Render the variant comparison and explainable promotion decision."""
+
+    lines = [
+        "# Skill Ablation Evaluation",
+        "",
+        (
+            "Deterministic local fixture evaluation; no LLM judge, external API, or raw trace "
+            "retention."
+        ),
+        "",
+        "## Variant Metrics",
+        "",
+        (
+            "| Variant | Role | Dev success | Held-out success | Retries | Context cost | "
+            "Latency proxy | Negative triggers | Safety violations | Evidence violations |"
+        ),
+        "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+    ]
+    for metrics in evaluation.variants:
+        lines.append(
+            "| "
+            f"{metrics.name} | {metrics.role} | {_percent(metrics.development_success)} | "
+            f"{_percent(metrics.held_out_success)} | {metrics.retries} | {metrics.context_cost} | "
+            f"{metrics.latency_proxy} | {metrics.negative_triggers} | "
+            f"{metrics.safety_violations} | {metrics.evidence_violations} |"
+        )
+    lines.extend(
+        [
+            "",
+            "## Recommendation",
+            "",
+            f"- Candidate: {evaluation.decision.candidate}",
+            f"- Recommendation: {evaluation.decision.recommendation}",
+            "- Reasons:",
+        ]
+    )
+    lines.extend(f"  - {reason}" for reason in evaluation.decision.reasons)
     return "\n".join(lines) + "\n"
