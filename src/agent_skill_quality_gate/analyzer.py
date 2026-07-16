@@ -5,8 +5,17 @@ from __future__ import annotations
 import re
 from collections import defaultdict
 from collections.abc import Iterable
+from pathlib import Path
 
-from .models import CategoryScore, LintFinding, Severity, SkillCard, SkillLintResult
+from .models import (
+    CategoryScore,
+    LintFinding,
+    LintRun,
+    Severity,
+    SkillCard,
+    SkillLintResult,
+)
+from .parser import parse_skill_tree
 
 _CATEGORY_ORDER = (
     "trigger clarity",
@@ -317,3 +326,13 @@ def analyze_skill(card: SkillCard) -> SkillLintResult:
         category_scores=category_scores,
         findings=tuple(findings),
     )
+
+
+def analyze_tree(root: Path) -> LintRun:
+    """Parse and analyze every permitted skill below a local root directory."""
+
+    parsed = parse_skill_tree(root)
+    results = tuple(
+        sorted((analyze_skill(card) for card in parsed.cards), key=lambda result: result.skill_name)
+    )
+    return LintRun(results=results, diagnostics=parsed.diagnostics)
