@@ -109,5 +109,77 @@ class PruneProposal:
     proposed_change: str
 
 
+@dataclass(frozen=True)
+class WorkflowCase:
+    """A synthetic request with explicit selection and contract expectations."""
+
+    case_id: str
+    split: Literal["development", "held-out"]
+    request: str
+    skill_name: str
+    should_trigger: bool
+    required_artifacts: tuple[str, ...]
+    requested_tools: tuple[str, ...]
+    forbidden_instructions: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class ContractViolation:
+    case_id: str
+    skill_name: str
+    code: str
+    message: str
+
+
+@dataclass(frozen=True)
+class SelectionOutcome:
+    case_id: str
+    split: Literal["development", "held-out"]
+    skill_name: str
+    should_trigger: bool
+    selected_skill: str | None
+
+    @property
+    def is_correct(self) -> bool:
+        if self.should_trigger:
+            return self.selected_skill == self.skill_name
+        return self.selected_skill is None
+
+
+@dataclass(frozen=True)
+class SelectionMetrics:
+    split: Literal["development", "held-out"]
+    true_positives: int
+    false_positives: int
+    false_negatives: int
+    true_negatives: int
+
+    @property
+    def precision(self) -> float:
+        denominator = self.true_positives + self.false_positives
+        return self.true_positives / denominator if denominator else 1.0
+
+    @property
+    def recall(self) -> float:
+        denominator = self.true_positives + self.false_negatives
+        return self.true_positives / denominator if denominator else 1.0
+
+    @property
+    def false_positive_rate(self) -> float:
+        denominator = self.false_positives + self.true_negatives
+        return self.false_positives / denominator if denominator else 0.0
+
+
+@dataclass(frozen=True)
+class SelectionEvaluation:
+    outcomes: tuple[SelectionOutcome, ...]
+    metrics: tuple[SelectionMetrics, ...]
+    contract_violations: tuple[ContractViolation, ...]
+
+
 class SkillParseError(ValueError):
     """Raised when a SKILL.md cannot be safely interpreted as a skill card."""
+
+
+class SkillEvaluationError(ValueError):
+    """Raised when deterministic synthetic evaluation fixtures are invalid."""
