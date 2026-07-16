@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from agent_skill_quality_gate.pruning import propose_pruning
-
 from agent_skill_quality_gate.analyzer import analyze_tree
+from agent_skill_quality_gate.pruning import propose_pruning
 from agent_skill_quality_gate.reporting import render_prune_review_packet
 
 FIXTURE_ROOT = Path(__file__).parent / "fixtures" / "corpus"
