@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 FIXTURE_ROOT = Path(__file__).parent / "fixtures" / "corpus"
+EVALUATION_ROOT = Path(__file__).parent / "fixtures" / "evaluation"
 
 
 def test_lint_command_inspects_a_complete_synthetic_corpus() -> None:
@@ -54,3 +55,24 @@ def test_suggest_prune_is_a_read_only_dry_run() -> None:
     assert before == after
     assert "Read-only dry run" in result.stdout
     assert "INSTRUCTION_STALE_OR_NOOP" in result.stdout
+
+
+def test_skill_eval_prints_separate_development_and_held_out_metrics() -> None:
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "agent_skill_quality_gate",
+            "skill-eval",
+            str(EVALUATION_ROOT / "skills"),
+            str(EVALUATION_ROOT / "cases.yaml"),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0
+    assert "| development | 100% | 100% | 0%" in result.stdout
+    assert "| held-out | 100% | 100% | 0%" in result.stdout
+    assert "raw trace retention" in result.stdout

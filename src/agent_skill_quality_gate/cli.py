@@ -27,6 +27,20 @@ def build_parser() -> argparse.ArgumentParser:
             type=Path,
             help="Directory containing one or more SKILL.md files.",
         )
+    evaluation_parser = subparsers.add_parser(
+        "skill-eval",
+        help="Evaluate declared trigger selection against local synthetic fixtures.",
+    )
+    evaluation_parser.add_argument(
+        "root",
+        type=Path,
+        help="Directory containing one or more SKILL.md files.",
+    )
+    evaluation_parser.add_argument(
+        "cases",
+        type=Path,
+        help="YAML file containing synthetic workflow cases.",
+    )
     return parser
 
 
@@ -36,17 +50,25 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
 
     from .analyzer import analyze_tree
-    from .models import SkillParseError
+    from .evaluation import evaluate_selection, load_workflow_cases
+    from .models import SkillEvaluationError, SkillParseError
+    from .parser import parse_skill_tree
     from .pruning import propose_pruning
     from .reporting import (
         render_lint_summary,
         render_markdown_report,
         render_prune_review_packet,
+        render_selection_evaluation,
     )
 
     try:
+        if arguments.command == "skill-eval":
+            parsed = parse_skill_tree(arguments.root)
+            cases = load_workflow_cases(arguments.cases)
+            print(render_selection_evaluation(evaluate_selection(parsed.cards, cases)), end="")
+            return 0
         run = analyze_tree(arguments.root)
-    except SkillParseError as error:
+    except (SkillEvaluationError, SkillParseError) as error:
         print(f"error: {error}")
         return 2
 

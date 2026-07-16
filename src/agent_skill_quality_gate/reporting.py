@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from collections import defaultdict
 
-from .models import LintRun, PruneProposal, SkillLintResult
+from .models import LintRun, PruneProposal, SelectionEvaluation, SkillLintResult
 
 _SENSITIVE_VALUE_PATTERN = re.compile(
     r"(?i)\b(api[_-]?key|password|secret|token)\s*([:=])\s*[^\s,;]+"
@@ -131,4 +131,67 @@ def render_prune_review_packet(proposals: tuple[PruneProposal, ...]) -> str:
         )
     if not proposals:
         lines.extend(["| none | - | - | - | No prune candidates were found. | - |"])
+    return "\n".join(lines) + "\n"
+
+
+def _percent(value: float) -> str:
+    return f"{value * 100:.0f}%"
+
+
+def render_selection_evaluation(evaluation: SelectionEvaluation) -> str:
+    """Render synthetic evaluation evidence without exposing request content or traces."""
+
+    lines = [
+        "# Skill Trigger Evaluation",
+        "",
+        (
+            "Deterministic local fixture evaluation; no LLM judge, external API, or raw trace "
+            "retention."
+        ),
+        "",
+        "## Split Metrics",
+        "",
+        "| Split | Precision | Recall | False-positive rate | TP | FP | FN | TN |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+    ]
+    for metrics in evaluation.metrics:
+        lines.append(
+            f"| {metrics.split} | {_percent(metrics.precision)} | {_percent(metrics.recall)} | "
+            f"{_percent(metrics.false_positive_rate)} | {metrics.true_positives} | "
+            f"{metrics.false_positives} | {metrics.false_negatives} | {metrics.true_negatives} |"
+        )
+
+    lines.extend(
+        [
+            "",
+            "## Selection Outcomes",
+            "",
+            "| Split | Case | Expected | Selected | Result |",
+            "| --- | --- | --- | --- | --- |",
+        ]
+    )
+    for outcome in evaluation.outcomes:
+        expected = outcome.skill_name if outcome.should_trigger else "must not trigger"
+        selected = outcome.selected_skill or "none"
+        result = "pass" if outcome.is_correct else "flagged"
+        lines.append(
+            f"| {outcome.split} | {outcome.case_id} | {expected} | {selected} | {result} |"
+        )
+
+    lines.extend(["", "## Contract Checks", ""])
+    if not evaluation.contract_violations:
+        lines.append("All required artifacts, approved tools, and forbidden instructions passed.")
+    else:
+        lines.extend(
+            [
+                "| Case | Skill | Violation | Details |",
+                "| --- | --- | --- | --- |",
+            ]
+        )
+        for violation in evaluation.contract_violations:
+            lines.append(
+                "| "
+                f"{violation.case_id} | {violation.skill_name} | {violation.code} | "
+                f"{_redact(violation.message)} |"
+            )
     return "\n".join(lines) + "\n"

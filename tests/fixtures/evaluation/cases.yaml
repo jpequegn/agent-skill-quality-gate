@@ -1,0 +1,58 @@
+cases:
+  - id: dev-production-incident
+    split: development
+    request: Prepare an initial response plan for this production incident.
+    skill: incident-triage
+    should_trigger: true
+    required_artifacts:
+      - Incident timeline
+    requested_tools:
+      - incident-api
+    forbidden_instructions:
+      - store raw logs
+  - id: dev-incident-handoff
+    split: development
+    request: Give the production incident team an initial response plan for handoff.
+    skill: incident-triage
+    should_trigger: true
+    required_artifacts:
+      - Incident timeline
+    requested_tools:
+      - incident-api
+    forbidden_instructions:
+      - store raw logs
+  - id: dev-product-feature
+    split: development
+    request: Draft a product feature planning brief.
+    skill: incident-triage
+    should_trigger: false
+    required_artifacts: []
+    requested_tools: []
+    forbidden_instructions: []
+  - id: held-out-incident-triage
+    split: held-out
+    request: Triage the production incident response plan before the next handoff.
+    skill: incident-triage
+    should_trigger: true
+    required_artifacts:
+      - Incident timeline
+    requested_tools:
+      - incident-api
+    forbidden_instructions:
+      - store raw logs
+  - id: held-out-production-billing
+    split: held-out
+    request: Handle a production billing question for a customer.
+    skill: incident-triage
+    should_trigger: false
+    required_artifacts: []
+    requested_tools: []
+    forbidden_instructions: []
+  - id: held-out-sandbox-alert
+    split: held-out
+    request: Triage a sandbox alert before a test run.
+    skill: incident-triage
+    should_trigger: false
+    required_artifacts: []
+    requested_tools: []
+    forbidden_instructions: []
